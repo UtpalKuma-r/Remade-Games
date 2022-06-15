@@ -3,6 +3,7 @@ import sys
 import random
 import os
 from pygame import mixer
+import time
 
 pygame.init()
 
@@ -10,7 +11,8 @@ pygame.init()
 SIZE = WIDTH, HEIGHT = 600, 700
 SCALE = (90, 100)
 Font = pygame.font.Font("freesansbold.ttf", 50)
-small_font = pygame.font.Font("freesansbold.ttf", 40)
+small_font = pygame.font.Font("freesansbold.ttf", 30)
+clock = pygame.time.Clock()
 #---------------------------------------------------------------------------
 
 screen = pygame.display.set_mode(SIZE)
@@ -18,7 +20,7 @@ pygame.display.set_caption('InfinitCarDodger')
 
 class obstecal:
     def __init__(self, image, x_coordinate, scale):
-        self.image = pygame.transform.scale(pygame.image.load(image), scale)
+        self.image = pygame.transform.scale(pygame.image.load(image).convert_alpha(), scale)
         self.x_coordinate = x_coordinate
         self.y_coordinate = 0
         self.rect = self.image.get_rect()
@@ -41,7 +43,7 @@ class playerclass:
 
     def __init__(self, image):
         self.spawn_location = [5, 105, 205, 305]
-        self.image = pygame.transform.scale(pygame.image.load(image), SCALE)
+        self.image = pygame.transform.scale(pygame.image.load(image).convert_alpha(), SCALE)
         self.x_coordinate = random.choice(self.spawn_location)
         self.rect = self.image.get_rect()
         self.y_coordinate = HEIGHT-self.rect.height
@@ -72,13 +74,13 @@ class game_flow:
         #Game variables-------------------------------------------------------------
         self.game_state = "intro"
         self.spawn_location = [5, 105, 205, 305]
-        self.y_velocity = 1
-        self.x_velocity = 1.5
+        self.y_velocity = 0
+        self.x_velocity = 0
         self.obstecal_list = []
         self.score = 0
         self.enemy_spawn = 1
         self.explosion_played = False
-        self.background = backgroundclass("images/background/background.png", 0, (400, 1400))
+        self.background = backgroundclass("images/background/background.png", 0, (600, 1400))
         self.gameover = False
         self.player = playerclass("images/player/car6.png")
         #---------------------------------------------------------------------------
@@ -111,6 +113,8 @@ class game_flow:
             enemy.move(self.y_velocity)
             display(enemy.image, (enemy.x_coordinate, enemy.y_coordinate))
 
+        display(pygame.transform.scale(pygame.image.load("images/background/background7.png").convert_alpha(), (600, 700)), (0, 0))
+
         pygame.display.flip()
 
     def main(self):
@@ -142,7 +146,7 @@ class game_flow:
 
         self.background.move(self.y_velocity)
         display(self.background.image, (self.background.x_coordinate, self.background.y_coordinate))
-        display(Font.render(str(round(self.score)), True, (0,0,255)), (475,0))
+        display(Font.render(str(round(self.score)), True, (255,255,0)), (480,20))
 
 
         last_enemy = self.obstecal_list[-1]
@@ -167,36 +171,26 @@ class game_flow:
                     self.score += 0.3
                 
                 if self.score == 10:
-                    self.y_velocity = 1.5
-                    self.x_velocity = 2
+                    self.y_velocity += 2
+                    self.x_velocity += 2
+
                 elif self.score == 20:
                     self.enemy_spawn = 2
+                    self.x_velocity += 2
+                    self.y_velocity += 2
+
                 elif self.score == 30:
-                    self.y_velocity = 2
-                    self.x_velocity = 2.5
+                    self.y_velocity += 2
+                    self.x_velocity += 2
+
                 elif self.score == 40:
                     self.enemy_spawn = 3
+                    self.x_velocity += 2
+                    self.y_velocity += 2
+
                 elif self.score == 50:
-                    self.y_velocity = 2.5
-                    self.x_velocity = 3
-                    
-    #----------------------------------Colision Detection-------------------------------------------
-            elif collision(self.player, enemy):
-
-                display(Font.render("Game",True, (98, 232, 202)), (400,150))
-                display(Font.render("Over",True, (98, 232, 202)), (400,200))
-                display(small_font.render("To restart", True, (255,0,255)), (400, 350))
-                display(small_font.render("press R", True, (255,0,255)), (400, 400))
-
-                self.x_velocity = self.y_velocity = 0
-                self.gameover = True
-                mixer.music.stop()    #stop the self.background music
-                if not self.explosion_played:
-                    explosion_sound = mixer.Sound("music/explosion.ogg")
-                    explosion_sound.play()
-                    self.explosion_played = True
-                    
-
+                    self.y_velocity += 2
+                    self.x_velocity += 2           
 
             else:
                 enemy.move(self.y_velocity)
@@ -206,24 +200,41 @@ class game_flow:
         display(self.player.image, (self.player.x_coordinate, self.player.y_coordinate))
 
 
+        count = 0
+        for obs in self.obstecal_list:
+            if count>2:
+                break
+            elif collision(self.player, obs):
+                display(Font.render("Game",True, (98, 232, 202)), (430,150))
+                display(Font.render("Over",True, (98, 232, 202)), (445,200))
+                display(small_font.render("To RESTART", True, (255,0,0)), (410, 350))
+                display(small_font.render("press R", True, (255,0,0)), (450, 380))
+                # print("collision")
+                self.x_velocity = self.y_velocity = 0
+                self.gameover = True
+                mixer.music.stop()    #stop the self.background music
+                if not self.explosion_played:
+                    explosion_sound = mixer.Sound("music/explosion.ogg")
+                    explosion_sound.play()
+                    self.explosion_played = True
+
+
         pygame.display.flip()
     
     #------------------------------Restart Function-----------------------------------
     def restart(self):
 
-        self.y_velocity = 1
-        self.x_velocity = 1.5
+        self.y_velocity = 3
+        self.x_velocity = 5
         self.obstecal_list = []
         self.score = 0
         self.enemy_spawn = 1
+        self.gameover = False
+        self.explosion_played = False
         # self.explosion_played = False
 
-
-        self.background = backgroundclass("images/background/background.png", 0, (400, 1400))
-
+        self.background = backgroundclass("images/background/background.png", 0, (600, 1400))
         self.player = playerclass("images/player/car6.png")
-
-
         enemy_image = random.choice(os.listdir("images/obstecale"))
         enemy_obj = obstecal(f"images/obstecale/{enemy_image}", random.choice(self.spawn_location), SCALE)
         self.obstecal_list.append(enemy_obj)
@@ -246,9 +257,5 @@ game_play = game_flow()
 playing = True
 game_play.restart()
 while playing:
+    dt = clock.tick(60)
     game_play.manager()
-
-
-'''
-self.background music:- Music: https://www.chosic.com/free-music/all/ 
-'''
